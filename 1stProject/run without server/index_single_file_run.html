@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title> 3D scene </title>
+	<link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+</head>
+
+<style>
+    body { 
+	margin: 0px;
+}
+
+main {
+	width: 100vw;
+	width: 100%;
+	position: absolute;
+	display: grid;
+	grid-template-columns: repeat(13, 1fr);
+	z-index: 99;
+	height: 100%;
+}
+
+#Tag3DScene {
+	grid-column: 7/13;
+}
+
+#Tag3DScene2 {
+	grid-column: 1/1;
+}
+
+#addVeh {
+	width: 50px;
+	top: 10px;
+}
+
+#subVeh {
+	width: 50px;
+	top: 10px;
+}
+
+#changeCamera {
+	width: 50px;
+	position: absolute;
+	top: 10px;
+	left: 10px;
+}
+
+#changeColor {
+	width: 50px;
+	position: absolute;
+	top: 10px;
+	left: 70px;
+}
+
+#whiteColor {
+	width: 50px;
+	position: absolute;
+	top: 10px;
+	left: 130px;
+}
+
+#slider {
+	position: absolute;
+	top: 10px;
+	left: 200px;
+}
+
+canvas {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: -1;
+}
+
+</style>
+
+<body>
+	<canvas id="background"></canvas>
+
+	<main>
+		<div id="Tag3DScene"> 
+			<button id="addVeh" type="button">+</button>
+			<button id="subVeh" type="button">-</button>
+		</div>
+
+		<div id="Tag3DScene2"> 
+			<button id="changeCamera" type="button"><i class="fa fa-camera"></i></button>
+			<button id="changeColor" type="button"><i class="fa fa-lightbulb-dollar"></i></button>
+			<button id="whiteColor" type="button"><i class="fa fa-lightbulb-on"></i></button>
+			<input id="slider" type="range" min="1" max="100" value="80">
+		</div>
+	</main>
+</body>
+
+<script type="module">
+
+import * as THREE from "https://threejs.org/build/three.module.js";
+import { OrbitControls } from "https://threejs.org/examples/jsm/controls/OrbitControls.js";
+
+const helper = {
+
+initEmptyScene: function (sceneElements) {
+
+    // ************************** //
+    // Create the 3D scene
+    // ************************** //
+    sceneElements.sceneGraph = new THREE.Scene();
+
+    // ************************** //
+    // Add camera
+    // ************************** //
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 500);
+    sceneElements.camera = camera;
+
+    camera.position.set(30, 20, 0);
+    camera.lookAt(0, 0, 0);
+    let CameraPositionState = "1";
+
+    let changeCameraPos = document.getElementById("changeCamera");
+
+    changeCameraPos.addEventListener("click", () => {changeCameraPosition()})
+
+    //CameraPositionState starts at 1 (when project is loaded for the first time)
+    //every time the button is clicked, it changes the state of the camera, changing the position
+    function changeCameraPosition() {
+
+        if (CameraPositionState == "1") {
+
+            camera.position.set(0, 3, 0);
+            camera.lookAt(10, 3, 0);
+            CameraPositionState = "2";
+        }
+
+        else if (CameraPositionState == "2") {
+            camera.position.set(30, 20, 0);
+            camera.lookAt(0, 0, 0);
+            CameraPositionState = "1";
+        }
+    }
+    
+    // ************************** //
+    // Illumination
+    // ************************** //
+
+    // ************************** //
+    // Add ambient light
+    // ************************** //
+    const ambientLight = new THREE.AmbientLight('rgb(255, 255, 255)', 0.4);
+    sceneElements.sceneGraph.add(ambientLight);
+
+    // ***************************** //
+    // Add spotlight (with shadows)
+    // ***************************** //
+
+    let changeLightRandom = document.getElementById("changeColor");
+    let changeLightWhite = document.getElementById("whiteColor");
+
+    changeLightRandom.addEventListener("click", () => {changeLightColor("random")})
+    changeLightWhite.addEventListener("click", () => {changeLightColor("white")})
+
+    function changeLightColor(color) {
+        if (color == "random") {
+            let spotLightColor = Math.random() * 0xffffff
+            spotLight.color.setHex(spotLightColor)
+        }
+
+        else if (color == "white") {
+            let spotLightColor = 0xffffff
+            spotLight.color.setHex(spotLightColor)
+        }
+
+    }
+
+    let spotLightColor = 0xffffff
+
+    const spotLight = new THREE.SpotLight(spotLightColor, 0.8);
+    spotLight.position.set(10, 15, 5);
+    sceneElements.sceneGraph.add(spotLight);
+
+    // Setup shadow properties for the spotlight
+    spotLight.castShadow = true;
+    spotLight.shadow.mapSize.width = 2048;
+    spotLight.shadow.mapSize.height = 2048;
+
+    var slider = document.getElementById("slider");
+
+    slider.oninput = function() {
+        spotLight.intensity = this.value/100;
+    }
+
+    // *********************************** //
+    // Create renderer (with shadow map)
+    // *********************************** //
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    sceneElements.renderer = renderer;
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearColor('rgb(255, 255, 150)', 1.0);
+    renderer.setSize(width, height);
+
+    // Setup shadowMap property
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // **************************************** //
+    // Add the rendered image in the HTML DOM
+    // **************************************** //
+    const htmlElement = document.querySelector("#Tag3DScene");
+    htmlElement.appendChild(renderer.domElement);
+
+    sceneElements.control = new OrbitControls(camera, renderer.domElement);
+},
+
+render: function render(sceneElements) {
+    sceneElements.renderer.render(sceneElements.sceneGraph, sceneElements.camera);
+},
+};
+
+// To store the scene graph, and elements usefull to rendering the scene
+const sceneElements = {
+    sceneGraph: null,
+    camera: null,
+    renderer: null,
+};
+
+// HANDLING EVENTS
+window.addEventListener('resize', resizeWindow);
+
+// Update render image size and camera aspect when the window is resized
+function resizeWindow(eventParam) {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    sceneElements.camera.aspect = width / height;
+    sceneElements.camera.updateProjectionMatrix();
+
+    sceneElements.renderer.setSize(width, height);
+}
+
+// Functions are called
+//  1. Initialize the empty scene
+//  2. Add elements within the scene
+//  3. Render the scene
+helper.initEmptyScene(sceneElements);
+load3DObjects(sceneElements.sceneGraph);
+helper.render(sceneElements);
+
+// Create and insert in the scene graph the models of the 3D scene
+function load3DObjects(sceneGraph) {
+
+    let planeGeometryRadius = 10;
+
+    // Create a ground plane
+    const planeGeometry = new THREE.CircleGeometry(planeGeometryRadius, 64);
+    const planeMaterial = new THREE.MeshPhongMaterial({ color: 'rgb(200, 200, 200)', side: THREE.DoubleSide });
+    const planeObject = new THREE.Mesh(planeGeometry, planeMaterial);
+    sceneGraph.add(planeObject);
+
+    // Change orientation of the plane using rotation
+    planeObject.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+    // Set shadow property
+    planeObject.receiveShadow = true;
+
+    //add forest to scene
+    addForest();
+
+    let vehicle_list = [];
+
+    let vehicle_distance = 7;
+
+    let addVehButton = document.getElementById("addVeh");
+
+    let subVehButton = document.getElementById("subVeh");
+
+    addVehButton.addEventListener("click", () => {changeNumberVehicles("add")})
+
+    subVehButton.addEventListener("click",() => {changeNumberVehicles("sub")})
+
+    function changeNumberVehicles(action) {
+
+        //add button scales plane, adds vehicle to scene with random velocity (in certain range)
+        //position starts at 7 and increments 5 for every new vehicle
+
+        if (action == "add") {
+
+            console.log("add button clicked")
+
+            let car_velocity = Math.random() * 0.007 + 0.008;
+
+            planeObject.scale.x += planeObject.scale.x * (5 / planeGeometryRadius);
+            planeObject.scale.y += planeObject.scale.y * (5 / planeGeometryRadius);
+
+            vehicle_distance += 5;
+
+            planeGeometryRadius += 5;
+
+            if (Math.random() < 0.5) {
+                addVehicle("car",`vehicle${vehicle_list.length}`,vehicle_distance,0,car_velocity);
+            }
+            
+            else {
+                addVehicle("truck",`vehicle${vehicle_list.length}`,vehicle_distance,0,car_velocity);
+            }
+
+        }
+
+        //sub button descales plane, removes vehicle from list and removes vehicle from scene
+
+        else if (action == "sub") {
+
+            if (vehicle_list.length==1) {
+                return;
+            }
+
+            console.log("sub button clicked")
+
+            planeObject.scale.x -= planeObject.scale.x * (5 / planeGeometryRadius);
+            planeObject.scale.y -= planeObject.scale.y * (5 / planeGeometryRadius);
+
+            vehicle_distance -= 5;
+
+            planeGeometryRadius -= 5;
+
+            let last_vehicle = vehicle_list[vehicle_list.length - 1];
+
+            sceneGraph.remove(last_vehicle);
+
+            vehicle_list.splice(-1,1)
+        }
+    }
+
+    //add vehicle to scene
+    if (Math.random() < 0.5) {
+        addVehicle("car","vehicle",7,0,0.0125);
+    }
+    
+    else {
+        addVehicle("truck","vehicle",7,0,0.0125);
+    }
+
+    //addVehicle adds vehicle to the scene and uses the functions from cars.js
+    //after adding the vehicle to the scene and list, it animates it using ComputeFrame3
+    function addVehicle(vehicleType,name,distance,i,delta) {
+
+        let vehicle;
+
+        if (vehicleType == "car") {
+            vehicle = createCar();
+        }
+
+        else if (vehicleType == "truck") {
+            vehicle = createTruck();
+        }
+
+        else {
+            return;
+        }
+    
+        sceneGraph.add(vehicle);
+
+        vehicle_list.push(vehicle);
+    
+        vehicle.scale.x = 0.05;
+        vehicle.scale.y = 0.05;
+        vehicle.scale.z = 0.05;
+    
+        vehicle.rotation.y = Math.PI/2;
+    
+        vehicle.name = name;
+
+        var computeFrame = () => {computeFrame3(i,delta,name,distance)}
+
+        requestAnimationFrame(computeFrame);
+    }     
+
+    function addForest() {
+        const forest = createForest(0,0,0);
+        sceneGraph.add(forest);
+    } 
+}
+
+// computeFrame3 animates vehicle, delta is the velocity, name is the vehicle name, distance is the distance between vehicle and center of plane
+
+function computeFrame3(i,delta,name,distance) {
+
+    // Can extract an object from the scene Graph from its name
+    const vehicle = sceneElements.sceneGraph.getObjectByName(name);
+
+    if ( vehicle == null) {
+        return;
+    }
+
+    i += delta;
+
+    vehicle.position.x = distance*Math.cos(i);
+    vehicle.position.z = distance*Math.sin(i);
+    vehicle.rotation.y -= delta;
+
+    // Rendering
+    helper.render(sceneElements);
+
+    var computeFrame = () => {computeFrame3(i,delta,name,distance)}
+    
+    // Call for the next frame
+    requestAnimationFrame(computeFrame);
+}
+
+// example adopted from https://www.freecodecamp.org/news/three-js-tutorial/
+
+// changed wheels to cylinder, added random colours, also added a truck
+
+function createCar() {
+
+    const car = new THREE.Group();
+    
+    //back wheels
+    const backWheel = createWheels();
+    backWheel.position.y = 6;
+    backWheel.position.x = -18;
+    
+    //front wheels
+    const frontWheel = createWheels();
+    frontWheel.position.y = 6;  
+    frontWheel.position.x = 18;
+    
+    //main body
+    const mainBody = new THREE.Mesh(
+      new THREE.BoxBufferGeometry(60, 15, 30),
+      new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff })
+    );
+    mainBody.position.y = 12;
+    
+    //top body
+    const topBody = new THREE.Mesh(
+      new THREE.BoxBufferGeometry(33, 12, 24),
+      new THREE.MeshLambertMaterial({ color: 0x808080 })
+    );
+    topBody.position.y = 25.5;
+    
+    //cast shadows
+    backWheel.castShadow = true;
+    backWheel.receiveShadow = true;
+    frontWheel.castShadow = true;
+    frontWheel.receiveShadow = true;
+    mainBody.castShadow = true;
+    mainBody.receiveShadow = true;
+    topBody.castShadow = true;
+    topBody.receiveShadow = true;
+    
+    car.add(backWheel);
+    car.add(frontWheel);
+    car.add(mainBody);
+    car.add(topBody);
+
+    return car;
+}
+
+function createTruck() {
+  const truck = new THREE.Group();
+
+  const mainBody = new THREE.Mesh(
+    new THREE.BoxBufferGeometry(75, 30, 30),
+    new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff })
+  );
+  mainBody.position.y = 20;
+  
+  //front body
+  const frontBody = new THREE.Mesh(
+    new THREE.BoxBufferGeometry(20, 22, 25),
+    new THREE.MeshLambertMaterial({ color: 0xFFFFFF })
+  );
+  frontBody.position.y = 18;
+  frontBody.position.x = -45;
+  
+  //back wheels
+  const backWheel = createWheels();
+  backWheel.position.x = -25;
+  backWheel.position.y = 6;  
+
+  //middle wheels
+  const middleWheel = createWheels();
+  middleWheel.position.y = 6;
+
+  //front wheels
+  const frontWheel = createWheels();
+  frontWheel.position.y = 6;  
+  frontWheel.position.x = 25;
+  
+  //cast shadows
+  mainBody.castShadow = true;
+  mainBody.receiveShadow = true;
+  frontBody.castShadow = true;
+  frontBody.receiveShadow = true;
+  backWheel.castShadow = true;
+  backWheel.receiveShadow = true;
+  middleWheel.castShadow = true;
+  middleWheel.receiveShadow = true;
+  frontWheel.castShadow = true;
+  frontWheel.receiveShadow = true;
+
+  truck.add(mainBody);
+  truck.add(frontBody);
+  truck.add(backWheel);
+  truck.add(middleWheel);
+  truck.add(frontWheel);
+
+  return truck;
+}
+
+
+function createWheels() {
+    const geometry = new THREE.CylinderGeometry( 6, 6, 35, 32 );
+    const material = new THREE.MeshLambertMaterial({ color: 0x333333 });
+    const wheel = new THREE.Mesh(geometry, material);
+    wheel.rotation.x = Math.PI / 2;
+    return wheel;
+}
+// example adopted from classes, added another tree type (round tree with fruits) 
+// created a function to randomize the position/number/type of trees in scene
+
+function createForest(x, y, z) {
+
+    var forest = new THREE.Object3D();
+    let numberTrees = Math.floor(Math.random() * 10) + 1
+
+    for (let i = 0; i < numberTrees; i++) {
+
+        let evenMoreRandom = Math.floor(Math.random() * 3) + 1
+
+        let treeType = Math.floor(Math.random() * 2) + 1
+
+        if (evenMoreRandom == 1) {
+            if (treeType == 1) {
+                const tree = createTree(x-Math.random()*3, y, z+Math.random()*3)
+                forest.add(tree)
+            }
+            else {
+                const tree = createRoundTree(x-Math.random()*3, y, z+Math.random()*3)
+                forest.add(tree)
+            }
+        }
+
+        else if (evenMoreRandom == 2) {
+            if (treeType == 1) {
+                const tree = createTree(x, y , z+Math.random()*3)
+                forest.add(tree)
+            }
+            else {
+                const tree = createRoundTree(x, y , z+Math.random()*3)
+                forest.add(tree)
+            }
+        }
+
+        else {
+            if (treeType == 1) {
+                const tree = createTree(x+Math.random()*3, y , z-Math.random()*3)
+                forest.add(tree)
+            }
+            else {
+                const tree = createRoundTree(x+Math.random()*3, y , z-Math.random()*3)
+                forest.add(tree)
+            }
+        }  
+    }
+
+    forest.position.set(x, y, z);
+
+    return forest
+
+}
+
+function createTree(x, y, z) {
+
+    // Creating a model by grouping basic geometries
+
+    // Cylinder centered at the origin
+
+    const cylinderGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1, 32);
+
+    const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+
+    const cylinder = new THREE.Mesh(cylinderGeometry, redMaterial);
+
+    // Set shadow property
+    cylinder.castShadow = true;
+
+    cylinder.receiveShadow = true;
+
+    // Move base of the cylinder to y = 0
+
+    cylinder.position.y = 0.5;
+
+    // Cone
+
+    const coneGeometry = new THREE.ConeGeometry(0.3, 1.5, 32);
+
+    const greenMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+
+    const cone = new THREE.Mesh(coneGeometry, greenMaterial);
+
+    // Set shadow property
+
+    cone.castShadow = true;
+
+    cone.receiveShadow = true;
+
+    // Move base of the cone to y = 20
+
+    cone.position.y = 1.75;
+
+    // Tree
+
+    var tree = new THREE.Group();
+
+    tree.add(cylinder);
+
+    tree.add(cone);
+
+    // Set the given position
+
+    tree.position.set(x, y, z);
+
+    return tree;
+}
+
+function createRoundTree(x, y, z) {
+
+    // Creating a model by grouping basic geometries
+
+    // Cylinder centered at the origin
+
+    const cylinderGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1, 32);
+
+    const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+
+    const cylinder = new THREE.Mesh(cylinderGeometry, redMaterial);
+
+    // Set shadow property
+    cylinder.castShadow = true;
+
+    cylinder.receiveShadow = true;
+
+    // Move base of the cylinder to y = 0
+
+    cylinder.position.y = 0.5;
+
+    // Sphere
+
+    const spheregeometry = new THREE.SphereGeometry( 0.5, 32, 32 );
+    const material = new THREE.MeshBasicMaterial( {color: 0x30B850} );
+    const sphere = new THREE.Mesh( spheregeometry, material );
+
+    // Set shadow property
+
+    sphere.castShadow = true;
+
+    sphere.receiveShadow = true;
+
+    // Move base of the cone to y = 20
+
+    sphere.position.y = 1.5;
+
+    // apples
+
+    const applegeometry = new THREE.SphereGeometry( 0.1, 16, 16 );
+    const material2 = new THREE.MeshBasicMaterial( {color: 0xFF0000} );
+
+    const apple1 = new THREE.Mesh( applegeometry, material2 );
+    const apple2 = new THREE.Mesh( applegeometry, material2 );
+
+    // Set shadow property
+
+    apple1.castShadow = true;
+    apple1.receiveShadow = true;
+
+    apple2.castShadow = true;
+    apple2.receiveShadow = true;
+
+    // Move base of the cone to y = 20
+
+    apple1.position.y = 1.9;
+    apple1.position.x = 0.2
+
+    apple2.position.y = 1.9;
+    apple2.position.x = -0.2
+
+    // Tree
+
+    var tree = new THREE.Group();
+
+    tree.add(cylinder);
+
+    tree.add(sphere);
+
+    tree.add(apple1)
+
+    tree.add(apple2)
+
+    // Set the given position
+
+    tree.position.set(x, y, z);
+
+    return tree;
+}
+
+</script>
+
+</html>

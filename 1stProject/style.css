@@ -1,0 +1,68 @@
+body { 
+	margin: 0px;
+}
+
+main {
+	width: 100vw;
+	width: 100%;
+	position: absolute;
+	display: grid;
+	grid-template-columns: repeat(13, 1fr);
+	z-index: 99;
+	height: 100%;
+}
+
+#Tag3DScene {
+	grid-column: 7/13;
+}
+
+#Tag3DScene2 {
+	grid-column: 1/1;
+}
+
+#addVeh {
+	width: 50px;
+	top: 10px;
+}
+
+#subVeh {
+	width: 50px;
+	top: 10px;
+}
+
+#changeCamera {
+	width: 50px;
+	position: absolute;
+	top: 10px;
+	left: 10px;
+}
+
+#changeColor {
+	width: 50px;
+	position: absolute;
+	top: 10px;
+	left: 70px;
+}
+
+#whiteColor {
+	width: 50px;
+	position: absolute;
+	top: 10px;
+	left: 130px;
+}
+
+#slider {
+	position: absolute;
+	top: 10px;
+	left: 200px;
+}
+
+canvas {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: -1;
+}
+
+
+

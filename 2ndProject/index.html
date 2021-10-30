@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title> 3D scene </title>
+
+	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+
+	<script type="module" src="planets.js" defer></script>
+	<script type="module" src="trees.js" defer></script>
+	<script type="module" src="helper.js" defer></script>
+	<script type="module" src="scene.js" defer></script>
+</head>
+
+<body>
+	<canvas id="background"></canvas>
+
+	<main>
+		<div id="Tag3DScene"> 
+			<button id="addPlanet" type="button">+</button>
+			<button id="subPlanet" type="button">-</button>
+		</div>
+
+		<div id="Tag3DScene2"> 
+			<input id="slider" type="range" min="1" max="100" value="80">
+		</div>
+	</main>
+</body>
+
+</html>
